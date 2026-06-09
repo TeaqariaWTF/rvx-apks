@@ -63,6 +63,7 @@ apkmirror-dlurl = "https://www.apkmirror.com/apk/inc/app"
 | `app-name` | Display name used in output filename | `table name` | Per-app |
 | `arch` | Target architecture (`all`, `both`, `arm64-v8a`, `armeabi-v7a`, `x86_64`, `x86`) | `all` | Per-app |
 | `version` | Target version (`auto`, `latest`, or a specific version string) | `auto` | Per-app |
+| `changelog-keywords` | List of keywords used to detect if this app was updated in the release notes | `[]` | Per-app |
 | `apkmirror-dlurl` | APKMirror page URL | `-` | Per-app |
 | `uptodown-dlurl` | Uptodown page URL | `-` | Per-app |
 | `github-dlurl` | GitHub Releases page URL | `-` | Per-app |
@@ -97,7 +98,14 @@ Acts as a total bypass of signature verification for one specific app.
 > 
 > Format for `sig.txt`: `<sha256-fingerprint>  <package.name>`
 
-3. ➕ **Adding a new patch source**:
+3. 🤖 **Smart Build**:
+
+When `changelog-keywords` are defined for an application, the CI will only build that app if its keywords are found in the upstream patch release notes.
+
+* `changelog-keywords` **(Per-app level only | Default: `[]`)**  
+A list of keyword strings to search for in the release notes. If not specified, the app will always be built regardless of changelog content.
+
+4. ➕ **Adding a new patch source**:
 
 - Add your app entries to `config.toml` with the appropriate `patches-source` and `brand` fields (see the configuration table above for all available options).
 - Add a new job to `.github/workflows/ci.yml` so the CI picks up your brand automatically. Copy the block below and replace every occurrence of `<brand>` with your brand name in **lowercase** (must match the `brand` value set in `config.toml`):
@@ -112,7 +120,7 @@ build-<brand>:
   secrets: inherit
 ```
 
-4. 🔑 **Keystore**:
+5. 🔑 **Keystore**:
 
 To sign APKs with a custom keystore, create a `.env` file in the project root:
 

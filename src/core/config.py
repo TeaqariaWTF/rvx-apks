@@ -40,6 +40,7 @@ class AppEntry:
     cli_version: str
     skip_sigcheck: bool
     enabled: bool
+    changelog_keywords: list[str]
 
 def load_toml(path: Path) -> dict[str, object]:
     with path.open("rb") as fp:
@@ -83,6 +84,11 @@ def parse_app_entries(data: dict[str, object], main: Config) -> list[AppEntry]:
             if raw and "'" not in raw:
                 raise ValueError(f"Patch names inside {name} for '{table_name}' must be quoted")
 
+        raw_keywords = t.get("changelog-keywords")
+        if raw_keywords is not None and not isinstance(raw_keywords, list):
+            raise ValueError(f"'changelog-keywords' must be a list for '{table_name}'")
+        keywords = [s.lower() for k in raw_keywords if (s := str(k)).strip()] if raw_keywords else []
+
         entries.append(AppEntry(
             table=table_name,
             app_name=str(t.get("app-name", table_name)),
@@ -101,5 +107,6 @@ def parse_app_entries(data: dict[str, object], main: Config) -> list[AppEntry]:
             cli_version=str(t.get("cli-version", main.cli_version)),
             skip_sigcheck=_parse_bool(t, "skip-sigcheck", False),
             enabled=_parse_bool(t, "enabled", True),
+            changelog_keywords=keywords,
         ))
     return entries
