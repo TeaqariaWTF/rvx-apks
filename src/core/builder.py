@@ -233,7 +233,11 @@ def run_build(entries: list[AppEntry], config: Config, net: NetworkManager) -> b
         epr("All builds failed")
         return False
 
-    changelogs = "".join(cl.read_text(encoding="utf-8") for cl in sorted(TEMP_DIR.glob("*/changelog.md")))
+    raw = "".join(cl.read_text(encoding="utf-8") for cl in sorted(TEMP_DIR.glob("*/changelog.md")))
+    block_re = re.compile(r"^> ⚙️ » (CLI|Patches):.*?(?=^> ⚙️ »|\Z)", re.MULTILINE | re.DOTALL)
+    cli_blocks = "".join(m.group() for m in block_re.finditer(raw) if m.group(1) == "CLI")
+    patch_blocks = "".join(m.group() for m in block_re.finditer(raw) if m.group(1) == "Patches")
+    changelogs = cli_blocks + patch_blocks
     microg_line = "▶️ » Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) to enable Google account sign-in for supported apps\n"
     Path("build.md").write_text("\n".join([*log_lines, "", microg_line, changelogs]), encoding="utf-8")
     pr("Done")

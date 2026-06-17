@@ -34,7 +34,10 @@ def fetch_cli(cli_src: str, cli_ver: str, net: NetworkManager) -> Path:
     cli_org = _strip_src_prefix(cli_src).split("/")[0]
     cli_dir = TEMP_DIR / cli_org.lower()
     cli_dir.mkdir(parents=True, exist_ok=True)
-    jar, _ = _fetch_single_asset(cli_src, "CLI", cli_ver, "cli", "jar", cli_dir, net)
+    jar, changelog = _fetch_single_asset(cli_src, "CLI", cli_ver, "cli", "jar", cli_dir, net)
+    if changelog:
+        with (cli_dir / "changelog.md").open("a", encoding="utf-8") as f:
+            f.write(changelog)
     return jar
 
 def fetch_mpp(src: str, ver: str, net: NetworkManager) -> Path:
@@ -79,13 +82,12 @@ def _fetch_single_asset(src: str, tag: str, ver: str, fprefix: str, ext: str, cl
 
     if file := _find_cached(cl_dir, fprefix, ver, ext, exclude_dev=False):
         tag_name = _tag_from_filename(file)
+        changelog = f"> ⚙️ » {tag}: `{clean_src.split('/')[0]}/{file.name}`  \n"
         if tag == "Patches" and tag_name:
             if gitlab:
-                changelog = f"[🔗 » Changelog](https://gitlab.com/{clean_src}/-/releases/{tag_name})\n\n"
+                changelog += f"[🔗 » Changelog](https://gitlab.com/{clean_src}/-/releases/{tag_name})\n\n"
             else:
-                changelog = f"[🔗 » Changelog](https://github.com/{clean_src}/releases/tag/{tag_name})\n\n"
-        else:
-            changelog = ""
+                changelog += f"[🔗 » Changelog](https://github.com/{clean_src}/releases/tag/{tag_name})\n\n"
         return file, changelog
 
     if release is None:
